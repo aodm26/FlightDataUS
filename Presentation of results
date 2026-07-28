@@ -1,0 +1,299 @@
+
+
+CN7031 · BIG DATA ANALYTICS · COMPONENT 2
+
+US Flight Delays 2024
+
+Turning 7 million flight records into operational insight with Apache Spark
+
+PROJECT AIM Design and implement a scalable big-data pipeline that analyses and visualises US domestic flight-delay patterns — revealing when, where and why delays happen to support data-driven decisions in aviation operations.
+
+Dataset: 7.08M records · 37 columns · 2024 (BTS / Kaggle) | Tools: PySpark 3.5 · Parquet · Matplotlib · Folium
+
+Group 4 · Antonio · Aodhan · Kateryna · Mohammed · Pg.Dip Artificial Intelligence
+
+01
+
+Dataset overview
+
+2024 Flight Delay Dataset — every domestic US commercial flight, with scheduled and actual times, routes, carriers, and coded reasons for each delay or cancellation.
+
+7.08M
+
+flight records
+
+37
+
+columns (2 engineered)
+
+1.4 GB
+
+raw CSV size
+
+2024
+
+full calendar year
+
+What's inside
+
+    Carriers, origin & destination airports, routes
+    Scheduled vs actual departure / arrival times
+    Five coded delay causes: carrier, weather, NAS, security, late-aircraft
+    Cancellation & diversion flags
+
+Why it matters
+
+Over 1 billion passengers flew from US airports in 2024 and almost 1 in 4 met a delay or cancellation. FAA delays at the 30 core airports rose 13% year-on-year (FAA, 2025). Delays cascade through the network, driving cost for airlines and passengers alike.
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 2 / 10
+
+02
+
+Big data context & the problem
+
+Why this is a big-data problem — and what we set out to solve
+
+V
+
+Volume
+
+7M+ rows now; air travel demand set to double by 2050 (IATA) — data grows with it.
+
+V
+
+Velocity
+
+Operations move hour-by-hour; incidents unfold in real time, not overnight.
+
+V
+
+Veracity
+
+Miscoded cancellations distort delay rates — data quality must be audited.
+
+THE PROBLEM
+
+A single laptop with pandas can just about load 1.4 GB — but it is memory-bound and would fail on a multi-year dataset.
+
+Our task: process the data with a distributed engine that runs on a laptop today and scales to a cluster tomorrow, then surface delay patterns clearly enough for non-technical stakeholders to act on.
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 3 / 10
+
+03
+
+Data preparation
+
+A PySpark quality-audit and cleansing pipeline turned a messy 1.4 GB CSV into an analysis-ready Parquet file.
+
+1
+
+Audit No duplicates found; verified 7,079,079 rows × 37 columns.
+
+2
+
+Clean Removed negative scheduled times; standardised cancellation_code to 'Not Cancelled'.
+
+3
+
+Engineer Added is_delayed (15-min rule) and dep_time_block (Morning/Afternoon/Evening/Overnight).
+
+4
+
+Optimise Reordered, consolidated and exported one compressed Parquet file.
+
+8× smaller. Columnar Parquet lets Spark read only the 18–26 columns each job needs, cutting I/O versus row-based CSV.
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 4 / 10
+
+04
+
+Workflow & system design
+
+End-to-end pipeline: one DataFrame abstraction from raw file to interactive dashboard.
+
+CSV 1.4 GB
+
+Raw 2024 records
+
+›
+
+Parquet 170 MB
+
+Clean, columnar store
+
+›
+
+Spark 3.5
+
+Distributed processing
+
+›
+
+Aggregations
+
+Groups & window fns
+
+›
+
+Dashboard
+
+Charts · maps · stream
+
+Storage
+
+Apache Parquet — columnar, compressed, splittable; predicate push-down.
+
+Processing
+
+Spark 3.5.1, local mode, 4 GB driver, Java 17. Lazy DAG beats MapReduce.
+
+Analytics
+
+DataFrame API — grouped aggregations + window functions (SQL-like).
+
+Visualisation
+
+Matplotlib & seaborn (static), Folium (maps), ipywidgets (interactive).
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 5 / 10
+
+05
+
+Analytics approach
+
+Three processing modes over the same cleaned data — demonstrating volume and velocity.
+
+1
+
+Full batch
+
+One-shot pass over all 7.08M rows for national patterns.
+
+2
+
+Sample
+
+Random 10,000-flight slice for fast interactive exploration.
+
+3
+
+Streaming
+
+Replays the July 2024 outage in 500-row tumbling windows.
+
+Validated: delay rate uses operated flights as the denominator, so mass cancellations can't dilute it. Sense-checked vs BTS 2024 (78.1% on-time, 1.4% cancelled).
+
+Live streaming dashboard — the outage igniting in real time (Batch 13, 19 Jul 07:00).
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 6 / 10
+
+06
+
+Key results — when & why delays happen
+
+What the numbers say
+
+    Peaks in July (>28% delayed) and May (~26%); October most reliable (~13%).
+    Delays compound through the day: Morning 14% → Evening 28.5% (Overnight ~10%).
+    Late-aircraft + carrier issues dominate delay minutes — weather is a minor share.
+    Frontier (F9) least reliable (>27%); Hawaiian (HA) & Republic (YX) the most reliable.
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 7 / 10
+
+07
+
+Case study — the July 2024 CrowdStrike collapse
+
+The data itself proves this was an IT/carrier failure, not weather — the smoking gun is in the causes.
+
+Before (1–18 Jul)
+
+Carrier delay 7.3 min · 22.4% delayed · few cancellations.
+
+Outage (19–25 Jul)
+
+Carrier delay jumps to 66 min; delay rate >53%; crew-tracking systems down.
+
+Peak (21 Jul)
+
+1,450+ cancellations in a day; 5,000+ over the week — system-wide gridlock.
+
+Recovery (26–31 Jul)
+
+IT restored: carrier delay back to ~7.6 min, cancellations near zero.
+
+Weather delay stayed near 0 throughout — a single faulty software update, not the weather, drove the meltdown (Sigalos, 2024).
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 8 / 10
+
+08
+
+Limitations, ethics & recommendations
+
+Limitations
+
+    Streaming is a simulated batch replay, not true real-time ingestion.
+    Local mode limits genuine horizontal scaling.
+    Single-year data — patterns may shift across years.
+
+Ethical & social
+
+    Carriers & airports are named — rank fairly, separating controllable vs weather/ATC causes.
+    Transparency of method and data quality before decisions.
+    Aggregate, non-personal data, but governance still applies (Kitchin, 2014).
+
+Recommendations
+
+    Add turnaround buffers to afternoon/evening schedules.
+    Invest in gate, ground & turnaround efficiency over weather focus.
+    Build IT redundancy & offline backups for crew/scheduling systems.
+
+CN7031 · Big Data Analytics · Flight Delay Dataset 2024
+
+Group 4 · 9 / 10
+
+Conclusion
+
+A Spark + Parquet pipeline turned 7 million flight records into clear operational insight — scalable from laptop to cluster, and readable for technical and non-technical audiences alike.
+
+When
+
+Delays peak in summer & compound into the evening — buffer late schedules.
+
+Why
+
+Carrier & late-aircraft issues, not weather, drive most lost minutes.
+
+Resilience
+
+One software failure caused a network meltdown — IT redundancy is essential.
+
+Selected references (Harvard)
+
+Bureau of Transportation Statistics (2025) Air travel consumer report: December 2024, full year 2024. Washington, DC: US DoT.
+
+Federal Aviation Administration (2025) Air Traffic by the Numbers: FY2024.
+
+Tosi, D., Kokaj, R. and Roccetti, M. (2024) '15 years of Big Data: a systematic literature review', Journal of Big Data, 11, Article 73.
+
+Zaharia, M. et al. (2016) 'Apache Spark: a unified engine for big data processing', Communications of the ACM, 59(11), pp. 56–65.
+
+Sigalos, M. (2024) 'CrowdStrike says it isn't to blame for Delta's flight cancellations after July outage', CNBC, 5 August.
+
+Patil, H. (2025) Flight Delay Dataset — 2024. Kaggle. Apache Software Foundation (2024) Apache Parquet documentation.
+
+Thank you — questions welcome.
